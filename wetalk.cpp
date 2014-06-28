@@ -10,47 +10,77 @@
 extern "C" {
 #include <gstreamer-1.0/gst/gst.h>
 }
+#include <jack/jack.h>
+#include "include/ezOptionParser.hpp"
+#include "wetalk.h"
+
 
 using namespace std;
 
-static GMainLoop * loop;
-GstElement *jacksrc, *jacksink;
-GstElement *pipeline;
 
-/*
- * 
- */
-int main(int argc, char** argv) {
+int parse_options(ez::ezOptionParser opt, int argc, const char* argv[]) {
+    opt.overview = "weTalk is a FOSS audio communications server, designed to \
+be used with off-the-shelf hardware.";
+    opt.syntax = "wetalk [OPTIONS]";
+    opt.example = "wetalk [-t test_name] [-d]\n\n";
+    opt.footer = "weTalk Copyright (C) 2014\n\n";
 
-    // Set program version
-    const char version[] = "0.1.0";
+    opt.add(
+            "", // Default value
+            0, // Required value?
+            0, // Number of args expected?
+            0, // Delimiter if using multiple args
+            "Display usage instructions", // Help
+            "-h", // Flag
+            "--help" // Flag
+            );
+    
+        opt.add(
+            "", // Default value
+            0, // Required value?
+            -1, // Number of args expected?
+            ',', // Delimiter if using multiple args
+            "Run integration tests", // Help
+            "-t", // Flag
+            "--test" // Flag
+            );
 
-    // Initialize GST
-    const gchar *nano_str;
-    guint gst_major, gst_minor, gst_micro, gst_nano;
 
-    gst_init(&argc, &argv);
-    gst_version(&gst_major, &gst_minor, &gst_micro, &gst_nano);
-    loop = g_main_loop_new(NULL, FALSE);
+    opt.parse(argc, argv);
 
-    cerr << "Starting RTMPSwitch v" << version;
-    cerr << " (linked against Gstreamer ";
-    cerr << gst_major << "." << gst_minor << "." << gst_micro << ")" << endl;
+    if (opt.isSet("-h")) {
+        string usage;
+        opt.getUsage(usage);
+        cout << usage;
 
-    pipeline = gst_element_factory_make("pipeline", "jack-pipeline");
+        return -1;
+    }
+    
+    /*if(opt.isSet("'t")){
+        vector<string> tests_to_run;
+        opt.get("-t")->getStrings(tests_to_run);
+        for (int i=0; i<tests_to_run.size();++i){
+            if (tests_to_run[i] == "jack"){
+                jack_test();
+            }
+        }
+        return -1;
+    }*/
+}
 
-    jacksrc = gst_element_factory_make("jackaudiosrc", "jacksrc");
-    jacksink = gst_element_factory_make("jackaudiosink", "jacksink");
-    g_object_set(G_OBJECT(jacksink), "connect", 0, NULL);
-    g_object_set(G_OBJECT(jacksrc), "connect", 0, NULL);
-    g_object_set(G_OBJECT(jacksink), "sync", false, NULL);
+int main(int argc, const char *argv[]) {
 
-    gst_bin_add_many(GST_BIN(pipeline), jacksrc, jacksink, NULL);
+    ez::ezOptionParser opt;
+    int ret = parse_options(opt, argc, argv);
+    if (ret == -1) {
+        return 0;
+    };
 
-    gst_element_link(jacksrc, jacksink);
 
-    gst_element_set_state(pipeline, GST_STATE_PLAYING);
-    g_main_loop_run(loop);
+    char ** argv_nonconst = const_cast<char**> (argv);
+
+    //gst_init(&argc, &argv_nonconst);
+ 
 
     return 0;
 }
