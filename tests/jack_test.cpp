@@ -92,14 +92,14 @@ int test_jack_mix_cb(jack_nframes_t nframes, void *arg) {
             ip[i] = op1[i] + op2[i];
         }
         mtdm->process(nframes, ip, op1);
-        
+
         //op2=op1;
-        
-        
-        for (jack_nframes_t i = 0; i < nframes; i++) {
-            op2=op1;
-            //printf("OP1: %f\t\tOP2: %f\t\tSum: %f\n", op1[i], op2[i], (op1[i] + op2[i]));
-        }
+        memcpy(op2, op1, sizeof(jack_default_audio_sample_t) * nframes);
+
+        /*for (jack_nframes_t i = 0; i < nframes; i++) {
+            //op2[i]=op1[i];
+            printf("OP1: %f\t\tOP2: %f\t\tSum: %f\n", op1[i], op2[i], (op1[i] + op2[i]));
+        }*/
     }
     return 0;
 }
